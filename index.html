@@ -1,0 +1,162 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Door Unlock App</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        padding: 50px;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 15px 32px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Remote Door Unlock</h1>
+    <button onclick="unlockDoor()">Unlock Door</button>
+    <div id="status">Status: Ready</div>
+
+    <script>
+      // MQTT settings (local Mosquitto)
+      const mqtt_server = "10.253.204.135"; // Replace with your computer's local IP
+      const mqtt_port = 9001; // Mosquitto WebSocket port (default 9001)
+      // Remove username/password for local testing (uncomment if required)
+      // const mqtt_user = 'YOUR_USERNAME';
+      // const mqtt_password = 'YOUR_PASSWORD';
+      const topic_unlock = "door/unlock";
+      const topic_status = "door/status";
+
+      // Connect to MQTT via WebSocket
+      const client = mqtt.connect(`ws://${mqtt_server}:${mqtt_port}/mqtt`, {
+        // username: mqtt_user,
+        // password: mqtt_password
+      });
+
+      client.on("connect", () => {
+        document.getElementById("status").innerText = "Status: Connected";
+        client.subscribe(topic_status);
+      });
+
+      client.on("message", (topic, message) => {
+        if (topic === topic_status) {
+          const status = message.toString();
+          document.getElementById("status").innerText = `Status: ${status}`;
+          if (status === "unlocked") {
+            setTimeout(() => {
+              document.getElementById("status").innerText = "Status: locked";
+            }, 5000);
+          }
+        }
+      });
+
+      function unlockDoor() {
+        client.publish(topic_unlock, "unlock");
+        document.getElementById("status").innerText =
+          "Status: Sending unlock...";
+      }
+    </script>
+  </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Door Unlock & Light Control</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        padding: 50px;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 15px 32px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        margin: 10px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Remote Door Unlock</h1>
+    <button onclick="unlockDoor()">Unlock Door</button>
+    <h2>LED Strip Control</h2>
+    <button onclick="lightOn()">Light ON</button>
+    <button onclick="lightOff()">Light OFF</button>
+    <div id="status">Status: Ready</div>
+
+    <script>
+      // MQTT settings (local Mosquitto)
+      const mqtt_server = "10.190.120.135"; // Replace with your computer's IP
+      const mqtt_port = 9001; // Mosquitto WebSocket port
+      const topic_unlock = "door/unlock";
+      const topic_status = "door/status";
+      const topic_light = "light/control";
+
+      // Connect to MQTT via WebSocket
+      const client = mqtt.connect(`ws://${mqtt_server}:${mqtt_port}/mqtt`);
+
+      client.on("connect", () => {
+        document.getElementById("status").innerText = "Status: Connected";
+        client.subscribe(topic_status);
+      });
+
+      client.on("message", (topic, message) => {
+        if (topic === topic_status) {
+          const status = message.toString();
+          document.getElementById("status").innerText = `Status: ${status}`;
+          if (status === "unlocked") {
+            setTimeout(() => {
+              document.getElementById("status").innerText = "Status: locked";
+            }, 5000);
+          }
+        }
+      });
+
+      function unlockDoor() {
+        client.publish(topic_unlock, "unlock");
+        document.getElementById("status").innerText =
+          "Status: Sending unlock...";
+      }
+
+      function lightOn() {
+        client.publish(topic_light, "on");
+        document.getElementById("status").innerText = "Status: Lights ON";
+      }
+
+      function lightOff() {
+        client.publish(topic_light, "off");
+        document.getElementById("status").innerText = "Status: Lights OFF";
+      }
+    </script>
+  </body>
+</html>

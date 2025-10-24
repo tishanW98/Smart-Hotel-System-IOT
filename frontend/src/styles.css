@@ -1,0 +1,25 @@
+body {
+  font-family: Arial;
+  text-align: center;
+  padding: 50px;
+}
+button {
+  background: #4caf50;
+  color: white;
+  padding: 15px 32px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  margin: 10px;
+}
+button:hover {
+  background: #45a049;
+}
+#status {
+  margin-top: 20px;
+  font-weight: bold;
+}
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Light Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+      }
+
+      .status {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .status.connected {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status.disconnected {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .status.connecting {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .light-button {
+        width: 150px;
+        height: 150px;
+        border: none;
+        border-radius: 50%;
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin: 20px 0;
+      }
+
+      .light-button.off {
+        background: linear-gradient(145deg, #e0e0e0, #c0c0c0);
+        color: #666;
+      }
+
+      .light-button.on {
+        background: linear-gradient(145deg, #ffd700, #ffed4e);
+        color: #333;
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+      }
+
+      .light-button:hover {
+        transform: scale(1.05);
+      }
+
+      .light-button:active {
+        transform: scale(0.95);
+      }
+
+      .light-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .config {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #eee;
+      }
+
+      .config input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .config button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+        transition: background 0.3s;
+      }
+
+      .config button:hover {
+        background: #5568d3;
+      }
+
+      .light-state {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 15px 0;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>💡 Light Control</h1>
+
+      <div id="status" class="status disconnected">Disconnected</div>
+
+      <div class="light-state" id="lightState">Light is OFF</div>
+
+      <button id="lightButton" class="light-button off" disabled>OFF</button>
+
+      <div class="config">
+        <h3>HiveMQ Cloud Settings</h3>
+        <input
+          type="text"
+          id="broker"
+          placeholder="Broker URL (e.g., abc123.s1.eu.hivemq.cloud)"
+          value=""
+        />
+        <input
+          type="number"
+          id="port"
+          placeholder="WebSocket Port (8884)"
+          value="8884"
+        />
+        <input type="text" id="username" placeholder="Username" value="" />
+        <input type="password" id="password" placeholder="Password" value="" />
+        <input
+          type="text"
+          id="topic"
+          placeholder="MQTT Topic (e.g., home/light)"
+          value="wildwaves/light"
+        />
+        <button onclick="connectMQTT()">Connect</button>
+      </div>
+    </div>
+
+    <script>
+      let client = null;
+      let isLightOn = false;
+      let mqttConnected = false;
+
+      const statusDiv = document.getElementById("status");
+      const lightButton = document.getElementById("lightButton");
+      const lightState = document.getElementById("lightState");
+
+      function updateStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type}`;
+      }
+
+      function updateLightUI(state) {
+        isLightOn = state;
+        if (state) {
+          lightButton.textContent = "ON";
+          lightButton.className = "light-button on";
+          lightState.textContent = "Light is ON";
+        } else {
+          lightButton.textContent = "OFF";
+          lightButton.className = "light-button off";
+          lightState.textContent = "Light is OFF";
+        }
+      }
+
+      function connectMQTT() {
+        const broker = document.getElementById("broker").value;
+        const port = parseInt(document.getElementById("port").value);
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const topic = document.getElementById("topic").value;
+
+        if (!broker || !username || !password || !topic) {
+          alert("Please fill in all fields");
+          return;
+        }
+
+        updateStatus("Connecting...", "connecting");
+
+        const clientId =
+          "light_control_" + Math.random().toString(16).substr(2, 8);
+
+        // Create MQTT client
+        client = new Paho.MQTT.Client(broker, port, "/mqtt", clientId);
+
+        // Set up callbacks
+        client.onConnectionLost = (responseObject) => {
+          if (responseObject.errorCode !== 0) {
+            console.log("Connection lost:", responseObject.errorMessage);
+            updateStatus("Connection lost", "disconnected");
+            lightButton.disabled = true;
+            mqttConnected = false;
+          }
+        };
+
+        client.onMessageArrived = (message) => {
+          console.log("Message received:", message.payloadString);
+          const payload = message.payloadString.toLowerCase();
+          if (payload === "on" || payload === "1") {
+            updateLightUI(true);
+          } else if (payload === "off" || payload === "0") {
+            updateLightUI(false);
+          }
+        };
+
+        // Connect options
+        const options = {
+          useSSL: true,
+          userName: username,
+          password: password,
+          onSuccess: () => {
+            console.log("Connected to HiveMQ Cloud");
+            updateStatus("Connected to HiveMQ Cloud", "connected");
+            mqttConnected = true;
+            lightButton.disabled = false;
+
+            // Subscribe to topic
+            client.subscribe(topic);
+            console.log("Subscribed to:", topic);
+          },
+          onFailure: (error) => {
+            console.log("Connection failed:", error.errorMessage);
+            updateStatus(
+              "Connection failed: " + error.errorMessage,
+              "disconnected"
+            );
+            lightButton.disabled = true;
+          },
+        };
+
+        // Connect
+        client.connect(options);
+      }
+
+      lightButton.addEventListener("click", () => {
+        if (!mqttConnected || !client) {
+          alert("Please connect to MQTT broker first");
+          return;
+        }
+
+        const topic = document.getElementById("topic").value;
+        const message = isLightOn ? "OFF" : "ON";
+
+        const mqttMessage = new Paho.MQTT.Message(message);
+        mqttMessage.destinationName = topic;
+
+        client.send(mqttMessage);
+        console.log("Sent:", message, "to", topic);
+
+        // Update UI immediately for better responsiveness
+        updateLightUI(!isLightOn);
+      });
+    </script>
+  </body>
+</html>

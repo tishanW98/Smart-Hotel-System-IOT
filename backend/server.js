@@ -1,70 +1,33 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const mqtt = require("mqtt");
-const http = require("http");
-const { Server } = require("socket.io");
+const path = require("path");
+require("dotenv").config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
+// API Routes
+app.get("/api/health", (req, res) => {
+  res.json({ status: "Server is running" });
 });
 
-// MQTT config (from user's HTML)
-const MQTT_HOST = process.env.MQTT_HOST || "10.249.240.135";
-const MQTT_PORT = process.env.MQTT_PORT || "1883"; // TCP port for backend
-const TOPIC_UNLOCK = "door/unlock";
-const TOPIC_STATUS = "door/status";
-const TOPIC_LIGHT = "light/control";
+// Serve static files from React app in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "client/build")));
 
-const mqttUrl = `mqtt://${MQTT_HOST}:${MQTT_PORT}`;
-const mqttClient = mqtt.connect(mqttUrl);
-
-mqttClient.on("connect", () => {
-  console.log("Connected to MQTT broker:", mqttUrl);
-  mqttClient.subscribe(TOPIC_STATUS, (err) => {
-    if (err) console.error("Subscribe error", err);
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "client/build", "index.html"));
   });
-});
+}
 
-mqttClient.on("message", (topic, message) => {
-  const payload = message.toString();
-  console.log("MQTT message", topic, payload);
-  if (topic === TOPIC_STATUS) {
-    io.emit("status", payload);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Backend API: http://localhost:${PORT}/api`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`React app: http://localhost:3000`);
   }
 });
-
-app.post("/api/unlock", (req, res) => {
-  mqttClient.publish(TOPIC_UNLOCK, "unlock", {}, (err) => {
-    if (err) return res.status(500).json({ error: "MQTT publish failed" });
-    res.json({ ok: true, message: "unlock sent" });
-  });
-});
-
-app.post("/api/light", (req, res) => {
-  const { action } = req.body;
-  if (!action || (action !== "on" && action !== "off")) {
-    return res.status(400).json({ error: 'action must be "on" or "off"' });
-  }
-  mqttClient.publish(TOPIC_LIGHT, action, {}, (err) => {
-    if (err) return res.status(500).json({ error: "MQTT publish failed" });
-    res.json({ ok: true, message: `light ${action} sent` });
-  });
-});
-
-// Simple health
-app.get("/api/health", (req, res) => res.json({ ok: true }));
-
-// Socket.IO connection logging
-io.on("connection", (socket) => {
-  console.log("Client connected", socket.id);
-  socket.on("disconnect", () => console.log("Client disconnected", socket.id));
-});
-
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Backend listening on ${PORT}`));

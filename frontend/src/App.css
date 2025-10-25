@@ -1,0 +1,157 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.status {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status.connected {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.disconnected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.light-state {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 15px 0;
+  color: #333;
+}
+
+.light-button {
+  width: 150px;
+  height: 150px;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  margin: 20px 0;
+}
+
+.light-button.off {
+  background: linear-gradient(145deg, #e0e0e0, #c0c0c0);
+  color: #666;
+}
+
+.light-button.on {
+  background: linear-gradient(145deg, #ffd700, #ffed4e);
+  color: #333;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+}
+
+.light-button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.light-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.light-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disconnect-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 15px;
+  transition: background 0.3s;
+}
+
+.disconnect-button:hover {
+  background: #c82333;
+}
+
+.config {
+  margin-top: 20px;
+}
+
+.config h3 {
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 18px;
+}
+
+.config input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.config input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.config button {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
+  transition: background 0.3s;
+  width: 100%;
+}
+
+.config button:hover {
+  background: #5568d3;
+}
+
+.config button:active {
+  transform: scale(0.98);
+}

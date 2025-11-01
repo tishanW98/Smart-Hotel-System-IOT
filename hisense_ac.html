@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisense AC Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .status.disconnected {
+            background: #e74c3c;
+        }
+
+        .status.connected {
+            background: #27ae60;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .button-grid.single {
+            grid-template-columns: 1fr;
+        }
+
+        .button-grid.triple {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 15px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-power {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .btn-mode {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .btn-fan {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+        }
+
+        .btn-special {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .temp-control {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+        }
+
+        .temp-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .temp-value {
+            font-size: 56px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .temp-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .temp-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .temp-btn {
+            width: 60px;
+            height: 60px;
+            border: 3px solid white;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .temp-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .temp-btn:active {
+            transform: scale(0.95);
+        }
+
+        .connect-section {
+            margin-bottom: 25px;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            width: 100%;
+        }
+
+        .response {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #333;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .response.show {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-grid.triple {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .temp-value {
+                font-size: 48px;
+            }
+        }
+
+        .icon {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌡️ Hisense AC Control</h1>
+            <p>KELON168 Protocol</p>
+        </div>
+
+        <div id="status" class="status disconnected">
+            ⚠️ Not Connected - Click "Connect to ESP32"
+        </div>
+
+        <div class="connect-section">
+            <button class="btn btn-connect" onclick="connectSerial()">
+                🔌 Connect to ESP32
+            </button>
+        </div>
+
+        <!-- Temperature Control -->
+        <div class="temp-control">
+            <div class="temp-display">
+                <div class="temp-value" id="tempDisplay">25°C</div>
+                <div class="temp-label">Current Temperature</div>
+            </div>
+            <div class="temp-buttons">
+                <button class="temp-btn" onclick="decreaseTemp()">−</button>
+                <button class="temp-btn" onclick="increaseTemp()">+</button>
+            </div>
+        </div>
+
+        <!-- Power -->
+        <div class="section">
+            <div class="section-title">Power</div>
+            <div class="button-grid single">
+                <button class="btn btn-power" onclick="sendCommand('power')">
+                    <span class="icon">⚡</span> Power Toggle
+                </button>
+            </div>
+        </div>
+
+        <!-- Modes -->
+        <div class="section">
+            <div class="section-title">Mode</div>
+            <div class="button-grid">
+                <button class="btn btn-mode" onclick="sendCommand('cool')">
+                    <span class="icon">❄️</span> Cool
+                </button>
+                <button class="btn btn-mode" onclick="sendCommand('heat')">
+                    <span class="icon">🔥</span> Heat
+                </button>
+                <button class="btn btn-mode" onclick="sendCommand('dry')">
+                    <span class="icon">💧</span> Dry
+                </button>
+                <button class="btn btn-mode" onclick="sendCommand('auto')">
+                    <span class="icon">🤖</span> Auto
+                </button>
+                <button class="btn btn-mode" onclick="sendCommand('fan')">
+                    <span class="icon">🌀</span> Fan
+                </button>
+            </div>
+        </div>
+
+        <!-- Fan Speed -->
+        <div class="section">
+            <div class="section-title">Fan Speed</div>
+            <div class="button-grid">
+                <button class="btn btn-fan" onclick="sendCommand('fanauto')">Auto</button>
+                <button class="btn btn-fan" onclick="sendCommand('fanlow')">Low</button>
+                <button class="btn btn-fan" onclick="sendCommand('fanmed')">Medium</button>
+                <button class="btn btn-fan" onclick="sendCommand('fanhigh')">High</button>
+            </div>
+        </div>
+
+        <!-- Special Functions -->
+        <div class="section">
+            <div class="section-title">Special Functions</div>
+            <div class="button-grid triple">
+                <button class="btn btn-special" onclick="sendCommand('swing')">
+                    <span class="icon">↕️</span> Swing
+                </button>
+                <button class="btn btn-special" onclick="sendCommand('turbo')">
+                    <span class="icon">⚡</span> Turbo
+                </button>
+                <button class="btn btn-special" onclick="sendCommand('sleep')">
+                    <span class="icon">😴</span> Sleep
+                </button>
+            </div>
+        </div>
+
+        <div id="response" class="response"></div>
+    </div>
+
+    <script>
+        let port;
+        let reader;
+        let writer;
+        let currentTemp = 25;
+
+        const statusDiv = document.getElementById('status');
+        const responseDiv = document.getElementById('response');
+        const tempDisplay = document.getElementById('tempDisplay');
+
+        async function connectSerial() {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+
+                const textDecoder = new TextDecoderStream();
+                const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+                reader = textDecoder.readable.getReader();
+
+                const textEncoder = new TextEncoderStream();
+                const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+                writer = textEncoder.writable.getWriter();
+
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ Connected to ESP32';
+                
+                responseDiv.classList.add('show');
+                addResponse('Connected successfully!');
+
+                readLoop();
+            } catch (error) {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ Connection failed: ' + error.message;
+                addResponse('Error: ' + error.message);
+            }
+        }
+
+        async function readLoop() {
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    addResponse(value);
+                }
+            } catch (error) {
+                addResponse('Read error: ' + error.message);
+            }
+        }
+
+        async function sendCommand(command) {
+            if (!writer) {
+                alert('Please connect to ESP32 first!');
+                return;
+            }
+
+            try {
+                await writer.write(command + '\n');
+                addResponse('→ Sent: ' + command);
+            } catch (error) {
+                addResponse('Send error: ' + error.message);
+            }
+        }
+
+        async function setTemperature(temp) {
+            if (temp < 18 || temp > 30) return;
+            currentTemp = temp;
+            tempDisplay.textContent = temp + '°C';
+            await sendCommand(temp.toString());
+        }
+
+        function increaseTemp() {
+            if (currentTemp < 30) {
+                sendCommand('+');
+                currentTemp++;
+                tempDisplay.textContent = currentTemp + '°C';
+            }
+        }
+
+        function decreaseTemp() {
+            if (currentTemp > 18) {
+                sendCommand('-');
+                currentTemp--;
+                tempDisplay.textContent = currentTemp + '°C';
+            }
+        }
+
+        function addResponse(text) {
+            const timestamp = new Date().toLocaleTimeString();
+            responseDiv.innerHTML += `[${timestamp}] ${text}<br>`;
+            responseDiv.scrollTop = responseDiv.scrollHeight;
+        }
+
+        // Check for Web Serial API support
+        if (!('serial' in navigator)) {
+            statusDiv.className = 'status disconnected';
+            statusDiv.textContent = '❌ Web Serial API not supported. Use Chrome/Edge browser.';
+            document.querySelector('.btn-connect').disabled = true;
+        }
+    </script>
+</body>
+</html>

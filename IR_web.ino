@@ -322,22 +322,48 @@ void callback(char* topic, byte* payload, unsigned int length) {
     bool needsUpdate = false;
     
     // Status
+    // Old code
+    // if (doc.containsKey("status")) {
+    //   bool newStatus = doc["status"].as<bool>();
+    //   if (newStatus != currentState.status) {
+    //     currentState.status = newStatus;
+    //     needsUpdate = true;
+    //   }
+    // }
+    // ✅ NEW CODE (always updates):
     if (doc.containsKey("status")) {
       bool newStatus = doc["status"].as<bool>();
-      if (newStatus != currentState.status) {
-        currentState.status = newStatus;
-        needsUpdate = true;
-      }
+      currentState.status = newStatus;  // ← NO IF CHECK
+      needsUpdate = true;
+      Serial.print("Status updated: ");
+      Serial.println(newStatus ? "ON" : "OFF");
     }
     
     // Temperature
+    // Old code
+    // if (doc.containsKey("temperaturelevel")) {
+    //   int newTemp = doc["temperaturelevel"].as<int>();
+    //   newTemp = constrain(newTemp, 18, 30);
+    //   if (newTemp != currentState.temperature) {
+    //     currentState.temperature = newTemp;
+    //     needsUpdate = true;
+    //   }
+    // }
+    // ✅ NEW CODE (checks BOTH names):
     if (doc.containsKey("temperaturelevel")) {
       int newTemp = doc["temperaturelevel"].as<int>();
       newTemp = constrain(newTemp, 18, 30);
-      if (newTemp != currentState.temperature) {
-        currentState.temperature = newTemp;
-        needsUpdate = true;
-      }
+      currentState.temperature = newTemp;
+      needsUpdate = true;
+      Serial.print("Temperature updated: ");
+      Serial.println(newTemp);
+    } else if (doc.containsKey("temperature")) {  // ← ADDED THIS
+      int newTemp = doc["temperature"].as<int>();
+      newTemp = constrain(newTemp, 18, 30);
+      currentState.temperature = newTemp;
+      needsUpdate = true;
+      Serial.print("Temperature updated: ");
+      Serial.println(newTemp);
     }
     
     // Mode
@@ -371,7 +397,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (needsUpdate) {
       applyACControl();
     } else {
-      Serial.println("No changes, skipping IR");
+      Serial.println("No fields to update in message");
     }
     
   } else {
